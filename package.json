@@ -1,0 +1,46 @@
+{
+  "name": "@dstanesc/o-o-o-o-o-o-o-r",
+  "version": "0.0.1",
+  "description": "O-O-O-O-O-O-O relay",
+  "repository": "https://github.com/dstanesc/O-O-O-O-O-O-O-R.git",
+  "type": "module",
+  "main": "./dist/main.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "clean": "rimraf dist node_modules",
+    "build": "tsc",
+    "test": "npm-run-all build test:jest -- --detectOpenHandles",
+    "test:jest": "NODE_OPTIONS=--experimental-vm-modules cross-env jest --runInBand dist",
+    "start": "tsc && node --experimental-specifier-resolution=node --loader ts-node/esm src/main.ts"
+  },
+  "keywords": [
+    "graph",
+    "tree",
+    "relay",
+    "o-o-o-o-o-o-o",
+    "service"
+  ],
+  "license": "(Apache-2.0 AND MIT)",
+  "author": "dstanesc <dstanesc@gmail.com>",
+  "dependencies": {
+    "@dstanesc/o-o-o-o-o-o-o": "^0.0.13",
+    "@dstanesc/wasm-chunking-fastcdc-node": "^0.1.1",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/jest": "^29.5.2",
+    "@types/supertest": "^2.0.12",
+    "axios": "^1.4.0",
+    "cross-env": "^7.0.3",
+    "jest": "^29.5.0",
+    "npm-run-all": "4.1.5",
+    "prettier": "2.7.1",
+    "rimraf": "3.0.2",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.3"
+  }
+}
