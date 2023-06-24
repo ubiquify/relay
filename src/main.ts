@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { BlockStore, memoryBlockStoreFactory } from "@dstanesc/o-o-o-o-o-o-o";
 import {
   GraphRelay,

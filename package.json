@@ -1,12 +1,13 @@
 {
   "name": "@dstanesc/o-o-o-o-o-o-o-r",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "O-O-O-O-O-O-O relay",
   "repository": "https://github.com/dstanesc/O-O-O-O-O-O-O-R.git",
   "type": "module",
-  "main": "./dist/main.js",
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": "dist/main.js",
   "scripts": {
     "clean": "rimraf dist node_modules",
     "build": "tsc",
