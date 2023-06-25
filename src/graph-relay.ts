@@ -264,7 +264,7 @@ class GraphRelay {
         await transientStore.push(this.blockStore);
         const versionRoot = versionStoreExisting.currentRoot();
         const storeRoot = versionStoreExisting.versionStoreRoot();
-        await this.resolver.update(versionStoreId, mergedRoot);
+        await this.resolver.update(versionStoreId, storeRoot);
         return { storeRoot, versionRoot };
       } else {
         // version already exists
