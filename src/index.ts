@@ -1,1 +1,1 @@
-export * from "./graph-relay";
+export * from "./graph-relay.js";

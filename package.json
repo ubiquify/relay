@@ -1,10 +1,10 @@
 {
   "name": "@dstanesc/o-o-o-o-o-o-o-r",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "O-O-O-O-O-O-O relay",
   "repository": "https://github.com/dstanesc/O-O-O-O-O-O-O-R.git",
   "type": "module",
-  "main": "./dist/index.js",
+  "exports": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": "dist/main.js",
@@ -25,7 +25,7 @@
   "license": "(Apache-2.0 AND MIT)",
   "author": "dstanesc <dstanesc@gmail.com>",
   "dependencies": {
-    "@dstanesc/o-o-o-o-o-o-o": "^0.0.14",
+    "@dstanesc/o-o-o-o-o-o-o": "0.0.16",
     "@dstanesc/wasm-chunking-fastcdc-node": "^0.1.1",
     "express": "^4.18.2"
   },
