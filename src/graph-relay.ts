@@ -25,7 +25,9 @@ const {
   packVersionStore,
   restoreSingleIndex: restoreVersionStore,
   packGraphVersion,
+  packRootIndex,
   restoreGraphVersion,
+  restoreRandomBlocks,
 } = graphPackerFactory(linkCodec);
 
 interface LinkResolver {
@@ -58,7 +60,18 @@ const memoryBlockResolverFactory = (): LinkResolver => {
   return new MemoryBlockResolver();
 };
 
+interface GraphRelayVersion {
+  major: number;
+  minor: number;
+  patch: number;
+}
+
 class GraphRelay {
+  private version: GraphRelayVersion = {
+    major: 0,
+    minor: 0,
+    patch: 23,
+  };
   private blockStore: BlockStore;
   private resolver: LinkResolver;
   private app: express.Express;
@@ -148,6 +161,40 @@ class GraphRelay {
     }
   }
 
+  public async handlePullRootIndexRequest(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    const id = req.query.id as string;
+    try {
+      const bytes = await this.pullRootIndex(id);
+      if (bytes !== undefined) {
+        res.send(Buffer.from(bytes.buffer));
+      } else {
+        res.sendStatus(404);
+      }
+    } catch (error) {
+      console.error("Error handling PullRootIndex request:", error);
+      res.sendStatus(500);
+    }
+  }
+
+  public async handlePushBlocksRequest(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    const bytes = new Uint8Array(req.body);
+    try {
+      const info: { blockCount: number } = await this.pushRandomBlocks(bytes);
+      res.json({
+        blockCount: info.blockCount,
+      });
+    } catch (error) {
+      console.error("Error handling PushBlock request:", error);
+      res.sendStatus(500);
+    }
+  }
+
   public async handleVersionStoreResolveRequest(
     req: Request,
     res: Response
@@ -158,6 +205,18 @@ class GraphRelay {
       res.status(200).json(result);
     } catch (error) {
       console.error("Error handling RESOLVE request:", error);
+      res.sendStatus(500);
+    }
+  }
+
+  public async handleProtocolVersionRequest(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      res.status(200).json(this.version);
+    } catch (error) {
+      console.error("Error handling PROTOCOL VERSION request:", error);
       res.sendStatus(500);
     }
   }
@@ -187,6 +246,15 @@ class GraphRelay {
     );
     this.app.get("/graph/version/pull", (req: Request, res: Response) =>
       this.handlePullGraphVersionRequest(req, res)
+    );
+    this.app.get("/graph/index/pull", (req: Request, res: Response) =>
+      this.handlePullRootIndexRequest(req, res)
+    );
+    this.app.put("/blocks/push", (req: Request, res: Response) =>
+      this.handlePushBlocksRequest(req, res)
+    );
+    this.app.get("/protocol/version", (req: Request, res: Response) =>
+      this.handleProtocolVersionRequest(req, res)
     );
     this.server = this.app.listen(port, callback);
     return this.server;
@@ -320,6 +388,27 @@ class GraphRelay {
     } else {
       return undefined;
     }
+  }
+
+  public async pullRootIndex(
+    versionRootString: string
+  ): Promise<Uint8Array | undefined> {
+    const root = linkCodec.parseString(versionRootString);
+    if ((await this.blockStore.get(root)) !== undefined) {
+      const bundle: Block = await packRootIndex(root, this.blockStore);
+      return bundle.bytes;
+    } else {
+      return undefined;
+    }
+  }
+
+  public async pushRandomBlocks(
+    bundleBytes: Uint8Array
+  ): Promise<{ blockCount: number }> {
+    const memoryStore: MemoryBlockStore = memoryBlockStoreFactory();
+    const blocks = await restoreRandomBlocks(bundleBytes, memoryStore);
+    await memoryStore.push(this.blockStore);
+    return { blockCount: blocks.length };
   }
 }
 

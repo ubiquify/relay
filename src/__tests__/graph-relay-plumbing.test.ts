@@ -1,9 +1,3 @@
-import axios, { AxiosInstance, AxiosResponse } from "axios";
-import {
-  LinkResolver,
-  GraphRelay,
-  memoryBlockResolverFactory,
-} from "../graph-relay";
 import {
   Block,
   BlockStore,
@@ -20,8 +14,13 @@ import {
   memoryBlockStoreFactory,
   valueCodecFactory,
   versionStoreFactory,
+  RelayClientPlumbing,
+  relayClientPlumbingFactory,
 } from "@dstanesc/o-o-o-o-o-o-o";
+
 import { compute_chunks } from "@dstanesc/wasm-chunking-fastcdc-node";
+
+import { GraphRelay, LinkResolver, memoryBlockResolverFactory } from "../index";
 
 const chunkSize = 512;
 const { chunk } = chunkerFactory(chunkSize, compute_chunks);
@@ -31,9 +30,7 @@ const {
   packVersionStore,
   restoreSingleIndex: restoreVersionStore,
   packGraphVersion,
-  packRandomBlocks,
   restoreGraphVersion,
-  restoreRootIndex,
 } = graphPackerFactory(linkCodec);
 
 enum ObjectTypes {
@@ -52,19 +49,18 @@ enum KeyTypes {
   CONTENT = 2,
 }
 
-describe("GraphRelay service", () => {
+describe("Plumbing client tests", () => {
   let relayBlockStore: BlockStore;
   let linkResolver: LinkResolver;
   let server: any;
   let graphRelay: GraphRelay;
-  let httpClient: AxiosInstance;
-
+  let relayClient: RelayClientPlumbing;
   beforeAll((done) => {
     relayBlockStore = memoryBlockStoreFactory();
     linkResolver = memoryBlockResolverFactory();
     graphRelay = new GraphRelay(relayBlockStore, linkResolver);
     server = graphRelay.start(3000, done); // Start the server
-    httpClient = axios.create({
+    relayClient = relayClientPlumbingFactory({
       baseURL: "http://localhost:3000",
     });
   });
@@ -73,15 +69,7 @@ describe("GraphRelay service", () => {
     graphRelay.stop(done); // Stop the server
   });
 
-  describe("the protocol version", () => {
-    it("should return the protocol version", async () => {
-      const response = await checkProtocolVersion(httpClient);
-      expect(response).toBeDefined();
-      expect(response).toEqual({ major: 0, minor: 0, patch: 23 });
-    });
-  });
-
-  describe("the graph relay", () => {
+  describe("the relay client", () => {
     let versionStoreId = "";
     it("should record complete graph history", async () => {
       const blockStore: MemoryBlockStore = memoryBlockStoreFactory();
@@ -135,11 +123,7 @@ describe("GraphRelay service", () => {
       /**
        * Post version store bits
        */
-      const response = await pushStoreBundle(
-        httpClient,
-        chunkSize,
-        bundle.bytes
-      );
+      const response = await relayClient.storePush(chunkSize, bundle.bytes);
       versionStoreId = versionStore.id();
       const { versionRoot } = response;
       expect(versionRoot).toEqual(
@@ -152,20 +136,13 @@ describe("GraphRelay service", () => {
       /**
        * Post graph version  bits
        */
-      const response1 = await pushGraphVersionBundle(
-        httpClient,
-        graphVersionBundle.bytes
-      );
+      const response1 = await relayClient.graphPush(graphVersionBundle.bytes);
       const { versionRoot: versionRoot1 } = response1;
       expect(versionRoot1).toEqual(versionRoot);
     });
 
     it("should return the version store bundle with pull", async () => {
-      const bytes = await pullStoreBundle(
-        httpClient,
-        chunkSize,
-        versionStoreId
-      );
+      const bytes = await relayClient.storePull(chunkSize, versionStoreId);
       expect(bytes).toBeDefined();
       const memoryStore: BlockStore = memoryBlockStoreFactory();
       const { root: versionStoreRoot } = await restoreVersionStore(
@@ -186,8 +163,7 @@ describe("GraphRelay service", () => {
     });
 
     it("should return the graph version bundle with pull", async () => {
-      const bytes = await pullGraphVersionBundle(
-        httpClient,
+      const bytes = await relayClient.graphPull(
         "bafkreiflyrpgzvjjg3ve36ecgv24k5zfjc6hdz7yttko36ho7hy3yhgrue"
       );
       expect(bytes).toBeDefined();
@@ -201,59 +177,8 @@ describe("GraphRelay service", () => {
       );
     });
 
-    it("should return the root index bundle with pull", async () => {
-      const bytes = await pullRootIndex(
-        httpClient,
-        "bafkreiflyrpgzvjjg3ve36ecgv24k5zfjc6hdz7yttko36ho7hy3yhgrue"
-      );
-      expect(bytes).toBeDefined();
-      const memoryStore: BlockStore = memoryBlockStoreFactory();
-      const { root, index, blocks } = await restoreRootIndex(
-        bytes,
-        memoryStore
-      );
-      expect(root.toString()).toEqual(
-        "bafkreiflyrpgzvjjg3ve36ecgv24k5zfjc6hdz7yttko36ho7hy3yhgrue"
-      );
-      expect(index).toBeDefined();
-      expect(blocks).toBeDefined();
-      expect(linkCodec.encodeString(index.vertexRoot)).toEqual(
-        "bafkreigalm73smlaestxzxbfxhe2nxcpoc6s6gsoa5ffaedo4zpuscolyi"
-      );
-      expect(linkCodec.encodeString(index.edgeRoot)).toEqual(
-        "bafkreign2te5ikcrghvgmvhzpk7s2xeowkz6sy7pm5fspoot4bjocq5s34"
-      );
-      expect(linkCodec.encodeString(index.propRoot)).toEqual(
-        "bafkreibnrhpcgiiz37vv3sg56n56u3n6pwnlbfw6a6rxyozhbu2zmffy2e"
-      );
-      expect(blocks.length).toEqual(6);
-    });
-
-    it("should push random blocks", async () => {
-      const bytes = await pullStoreBundle(
-        httpClient,
-        chunkSize,
-        versionStoreId
-      );
-      expect(bytes).toBeDefined();
-      const memoryStore: MemoryBlockStore = memoryBlockStoreFactory();
-      const { root: versionStoreRoot, blocks } = await restoreVersionStore(
-        bytes,
-        memoryStore
-      );
-      const randomBundle: Block = await packRandomBlocks(blocks);
-      const response = await pushBlocks(httpClient, randomBundle.bytes);
-      expect(response).toBeDefined();
-      const { blockCount } = response;
-      expect(blockCount).toEqual(2);
-    });
-
     it("should update bundle when new version pushed", async () => {
-      const bytes = await pullStoreBundle(
-        httpClient,
-        chunkSize,
-        versionStoreId
-      );
+      const bytes = await relayClient.storePull(chunkSize, versionStoreId);
       expect(bytes).toBeDefined();
       const memoryStore: BlockStore = memoryBlockStoreFactory();
       const { root: versionStoreRoot } = await restoreVersionStore(
@@ -275,10 +200,7 @@ describe("GraphRelay service", () => {
       });
       const versionRoot = versionStore.currentRoot();
 
-      const bytes2 = await pullGraphVersionBundle(
-        httpClient,
-        versionRoot.toString()
-      );
+      const bytes2 = await relayClient.graphPull(versionRoot.toString());
       expect(bytes2).toBeDefined();
       const { root: restoredVersionRoot } = await restoreGraphVersion(
         bytes2,
@@ -309,8 +231,7 @@ describe("GraphRelay service", () => {
         first,
         memoryStore
       );
-      const responseGraphVersionPush = await pushGraphVersionBundle(
-        httpClient,
+      const responseGraphVersionPush = await relayClient.graphPush(
         graphVersionBundle.bytes
       );
       const { versionRoot: versionRootPushed } = responseGraphVersionPush;
@@ -323,115 +244,10 @@ describe("GraphRelay service", () => {
         chunk,
         valueCodec
       );
-      const response = await pushStoreBundle(
-        httpClient,
-        chunkSize,
-        bundle.bytes
-      );
+      const response = await relayClient.storePush(chunkSize, bundle.bytes);
       versionStoreId = versionStore.id();
       const { versionRoot: versionRootMerged, storeRoot: storeRootMerged } =
         response;
     });
   });
 });
-
-async function pushStoreBundle(
-  httpClient: any,
-  chunkSize: number,
-  bytes: Uint8Array
-): Promise<any> {
-  const response = await httpClient.put("/store/push", bytes.buffer, {
-    params: {
-      chunkSize: chunkSize,
-    },
-    headers: {
-      "Content-Type": "application/octet-stream",
-    },
-  });
-  return response.data;
-}
-
-async function pullStoreBundle(
-  httpClient: any,
-  chunkSize: number,
-  id: string
-): Promise<Uint8Array | undefined> {
-  const response: AxiosResponse<ArrayBuffer> = await httpClient.get(
-    "/store/pull",
-    {
-      responseType: "arraybuffer",
-      params: {
-        chunkSize: chunkSize,
-        id: id,
-      },
-    }
-  );
-  if (response.data) {
-    const bytes = new Uint8Array(response.data);
-    return bytes;
-  } else return undefined;
-}
-
-async function pushGraphVersionBundle(
-  httpClient: any,
-  bytes: Uint8Array
-): Promise<any> {
-  const response = await httpClient.put("/graph/version/push", bytes.buffer, {
-    headers: {
-      "Content-Type": "application/octet-stream",
-    },
-  });
-  return response.data;
-}
-
-async function pullGraphVersionBundle(
-  httpClient: any,
-  id: string
-): Promise<Uint8Array | undefined> {
-  const response: AxiosResponse<ArrayBuffer> = await httpClient.get(
-    "/graph/version/pull",
-    {
-      responseType: "arraybuffer",
-      params: {
-        id: id,
-      },
-    }
-  );
-  if (response.data) {
-    const bytes = new Uint8Array(response.data);
-    return bytes;
-  } else return undefined;
-}
-
-async function pullRootIndex(
-  httpClient: any,
-  id: string
-): Promise<Uint8Array | undefined> {
-  const response: AxiosResponse<ArrayBuffer> = await httpClient.get(
-    "/graph/index/pull",
-    {
-      responseType: "arraybuffer",
-      params: {
-        id: id,
-      },
-    }
-  );
-  if (response.data) {
-    const bytes = new Uint8Array(response.data);
-    return bytes;
-  } else return undefined;
-}
-
-async function pushBlocks(httpClient: any, bytes: Uint8Array): Promise<any> {
-  const response = await httpClient.put("/blocks/push", bytes.buffer, {
-    headers: {
-      "Content-Type": "application/octet-stream",
-    },
-  });
-  return response.data;
-}
-
-async function checkProtocolVersion(httpClient: any): Promise<any> {
-  const response = await httpClient.get("/protocol/version", {});
-  return response.data;
-}
