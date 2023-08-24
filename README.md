@@ -39,9 +39,10 @@ const versionStore: VersionStore = ...
 const response: BasicPushResponse = await relayClient.push(
   versionStore.versionStoreRoot()
 );
+// ...
 const versionStoreId = ...
 const { versionStore, graphStore, graph } = await relayClient.pull(
-        versionStoreId
+  versionStoreId
 );
 ```
 

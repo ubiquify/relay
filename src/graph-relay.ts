@@ -412,4 +412,4 @@ class GraphRelay {
   }
 }
 
-export { GraphRelay, LinkResolver, memoryBlockResolverFactory };
+export { GraphRelay, GraphRelayVersion, LinkResolver, memoryBlockResolverFactory };
