@@ -19,8 +19,14 @@ import {
 } from "@dstanesc/o-o-o-o-o-o-o";
 
 import { compute_chunks } from "@dstanesc/wasm-chunking-fastcdc-node";
-
-import { GraphRelay, LinkResolver, memoryBlockResolverFactory } from "../index";
+import https from "https";
+import {
+  GraphRelay,
+  LinkResolver,
+  createGraphRelay,
+  getCertificate,
+  memoryBlockResolverFactory,
+} from "../index";
 
 const chunkSize = 512;
 const { chunk } = chunkerFactory(chunkSize, compute_chunks);
@@ -58,15 +64,18 @@ describe("Plumbing client tests", () => {
   beforeAll((done) => {
     relayBlockStore = memoryBlockStoreFactory();
     linkResolver = memoryBlockResolverFactory();
-    graphRelay = new GraphRelay(relayBlockStore, linkResolver);
-    server = graphRelay.start(3000, done); // Start the server
+    graphRelay = createGraphRelay(relayBlockStore, linkResolver);
+    server = graphRelay.startHttps(3000, getCertificate(), done);
     relayClient = relayClientPlumbingFactory({
-      baseURL: "http://localhost:3000",
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+      }),
+      baseURL: "https://localhost:3000",
     });
   });
 
   afterAll((done) => {
-    graphRelay.stop(done); // Stop the server
+    graphRelay.stopHttps(done); // Stop the server
   });
 
   describe("the relay client", () => {

@@ -1,17 +1,20 @@
 #!/usr/bin/env node
-
 import { BlockStore, memoryBlockStoreFactory } from "@dstanesc/o-o-o-o-o-o-o";
 import {
-  GraphRelay,
   LinkResolver,
   memoryBlockResolverFactory,
-} from "./graph-relay";
+  getCertificate,
+  createGraphRelay,
+} from "./index";
 
-// Usage example, memory only persistence
-const port = 3000;
 const blockStore: BlockStore = memoryBlockStoreFactory();
 const linkResolver: LinkResolver = memoryBlockResolverFactory();
-const graphRelay = new GraphRelay(blockStore, linkResolver);
-graphRelay.start(port, () => {
-  console.log(`GraphRelay started on port ${port}`);
+const httpsPort = 3003;
+const graphRelay = createGraphRelay(blockStore, linkResolver);
+graphRelay.startHttps(httpsPort, getCertificate(), () => {
+  console.log(`GraphRelay listening on https://localhost:${httpsPort}`);
 });
+// const httpPort = 3001;
+// graphRelay.startHttp(httpPort, () => {
+//   console.log(`GraphRelay listening on http://localhost:${httpPort}`);
+// });

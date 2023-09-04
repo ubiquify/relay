@@ -1,6 +1,6 @@
 # O-O-O-O-O-O-O-R
 
-Simple graph relay for [O7](https://github.com/dstanesc/O-O-O-O-O-O-O) library. _WIP_
+Simple graph relay for [O7](https://github.com/dstanesc/O-O-O-O-O-O-O) library.
 
 ## Usage
 
@@ -9,41 +9,29 @@ Server api.
 ```ts
 const blockStore: BlockStore = memoryBlockStoreFactory();
 const linkResolver: LinkResolver = memoryBlockResolverFactory();
-const graphRelay = new GraphRelay(blockStore, linkResolver);
-const server = graphRelay.start(3000, () => {}); // port 3000
+const httpsPort = 3003;
+const graphRelay = createGraphRelay(blockStore, linkResolver);
+graphRelay.startHttps(3000, getCertificate(), () => {
+  console.log(`GraphRelay listening on https://localhost:${httpsPort}`);
+});
+const httpPort = 3001;
+graphRelay.startHttp(httpPort, () => {
+  console.log(`GraphRelay listening on http://localhost:${httpPort}`);
+});
 ```
 
-Plumbing client api.
+## SSL
 
-```ts
-// FIXME - document plumbing client api
-```
+The relay expects two files in the `ssl` folder:
 
-Basic client api.
+- `server.key` - Private key.
+- `server.crt` - Certificate.
 
-```ts
-const relayClient = relayClientBasicFactory(
-  {
-    chunk,
-    chunkSize,
-    linkCodec,
-    valueCodec,
-    blockStore,
-    incremental: true, // false if unspecified
-  },
-  {
-    baseURL: "http://localhost:3000",
-  }
-);
-const versionStore: VersionStore = ...
-const response: BasicPushResponse = await relayClient.push(
-  versionStore.versionStoreRoot()
-);
-// ...
-const versionStoreId = ...
-const { versionStore, graphStore, graph } = await relayClient.pull(
-  versionStoreId
-);
+A self signed certificate can be generated in linux with `openssl`:
+
+```sh
+cd ssl/
+openssl req -nodes -new -x509 -keyout server.key -out server.crt
 ```
 
 ## Build

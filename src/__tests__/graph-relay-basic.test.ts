@@ -1,5 +1,4 @@
 import {
-  Block,
   BlockStore,
   Graph,
   GraphStore,
@@ -12,7 +11,6 @@ import {
   ValueCodec,
   VersionStore,
   chunkerFactory,
-  graphPackerFactory,
   graphStoreFactory,
   linkCodecFactory,
   memoryBlockStoreFactory,
@@ -25,19 +23,19 @@ import {
 } from "@dstanesc/o-o-o-o-o-o-o";
 
 import { compute_chunks } from "@dstanesc/wasm-chunking-fastcdc-node";
-
-import { GraphRelay, LinkResolver, memoryBlockResolverFactory } from "../index";
+import https from "https";
+import {
+  GraphRelay,
+  LinkResolver,
+  memoryBlockResolverFactory,
+  getCertificate,
+  createGraphRelay,
+} from "../index";
 
 const chunkSize = 512;
 const { chunk } = chunkerFactory(chunkSize, compute_chunks);
 const linkCodec: LinkCodec = linkCodecFactory();
 const valueCodec: ValueCodec = valueCodecFactory();
-const {
-  packVersionStore,
-  restoreSingleIndex: restoreVersionStore,
-  packGraphVersion,
-  restoreGraphVersion,
-} = graphPackerFactory(linkCodec);
 
 enum ObjectTypes {
   FOLDER = 1,
@@ -66,8 +64,8 @@ describe("Basic client tests", () => {
     blockStore = memoryBlockStoreFactory();
     relayBlockStore = memoryBlockStoreFactory();
     linkResolver = memoryBlockResolverFactory();
-    graphRelay = new GraphRelay(relayBlockStore, linkResolver);
-    server = graphRelay.start(3000, done); // Start the server
+    graphRelay = createGraphRelay(relayBlockStore, linkResolver);
+    server = graphRelay.startHttps(3000, getCertificate(), done);
     relayClient = relayClientBasicFactory(
       {
         chunk,
@@ -77,13 +75,16 @@ describe("Basic client tests", () => {
         blockStore,
       },
       {
-        baseURL: "http://localhost:3000",
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: false,
+        }),
+        baseURL: "https://localhost:3000",
       }
     );
   });
 
   afterAll((done) => {
-    graphRelay.stop(done); // Stop the server
+    graphRelay.stopHttps(done); // Stop the server
   });
 
   describe("the relay client", () => {

@@ -1,5 +1,4 @@
 import {
-  Block,
   BlockStore,
   Graph,
   GraphStore,
@@ -12,7 +11,6 @@ import {
   ValueCodec,
   VersionStore,
   chunkerFactory,
-  graphPackerFactory,
   graphStoreFactory,
   linkCodecFactory,
   memoryBlockStoreFactory,
@@ -25,19 +23,19 @@ import {
 } from "@dstanesc/o-o-o-o-o-o-o";
 
 import { compute_chunks } from "@dstanesc/wasm-chunking-fastcdc-node";
-
-import { GraphRelay, LinkResolver, memoryBlockResolverFactory } from "../index";
+import https from "https";
+import {
+  GraphRelay,
+  LinkResolver,
+  createGraphRelay,
+  getCertificate,
+  memoryBlockResolverFactory,
+} from "../index";
 
 const chunkSize = 512;
 const { chunk } = chunkerFactory(chunkSize, compute_chunks);
 const linkCodec: LinkCodec = linkCodecFactory();
 const valueCodec: ValueCodec = valueCodecFactory();
-const {
-  packVersionStore,
-  restoreSingleIndex: restoreVersionStore,
-  packGraphVersion,
-  restoreGraphVersion,
-} = graphPackerFactory(linkCodec);
 
 enum ObjectTypes {
   FOLDER = 1,
@@ -56,19 +54,21 @@ enum KeyTypes {
   FILL = 3,
 }
 
-describe("Basic client with incremental configuration tests", () => {
+describe("Basic client with incremental configuration tests incrx", () => {
   let relayBlockStore: BlockStore;
   let blockStore: MemoryBlockStore;
   let linkResolver: LinkResolver;
   let server: any;
   let graphRelay: GraphRelay;
   let relayClient: RelayClientBasic;
+  let initialBlocks: MemoryBlockStore;
   beforeAll((done) => {
     blockStore = memoryBlockStoreFactory();
+    initialBlocks = memoryBlockStoreFactory();
     relayBlockStore = memoryBlockStoreFactory();
     linkResolver = memoryBlockResolverFactory();
-    graphRelay = new GraphRelay(relayBlockStore, linkResolver);
-    server = graphRelay.start(3000, done); // Start the server
+    graphRelay = createGraphRelay(relayBlockStore, linkResolver);
+    server = graphRelay.startHttps(3000, getCertificate(), done);
     relayClient = relayClientBasicFactory(
       {
         chunk,
@@ -79,13 +79,16 @@ describe("Basic client with incremental configuration tests", () => {
         incremental: true,
       },
       {
-        baseURL: "http://localhost:3000",
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: false,
+        }),
+        baseURL: "https://localhost:3000",
       }
     );
   });
 
   afterAll((done) => {
-    graphRelay.stop(done); // Stop the server
+    graphRelay.stopHttps(done); // Stop the server
   });
 
   describe("the relay client", () => {
@@ -161,11 +164,14 @@ describe("Basic client with incremental configuration tests", () => {
       expect(response.versionRoot.toString()).toEqual(
         "bafkreihga2tjwaydujulir5gn7rjpwna4prp4l7ukha5ct6v3b6rhouvri"
       );
+
+      blockStore.push(initialBlocks);
     });
 
     it("should pull graph and history", async () => {
       const { versionStore, graphStore, graph } = await relayClient.pull(
-        versionStoreId
+        versionStoreId,
+        originalStoreRoot
       );
 
       expect(versionStore.id()).toEqual(versionStoreId);
@@ -183,7 +189,8 @@ describe("Basic client with incremental configuration tests", () => {
 
     it("should update existing and pushed result should reflect changes", async () => {
       const { versionStore, graphStore, graph } = await relayClient.pull(
-        versionStoreId
+        versionStoreId,
+        originalStoreRoot
       );
       const tx = graph.tx();
       await tx.start();
@@ -228,7 +235,10 @@ describe("Basic client with incremental configuration tests", () => {
           incremental: true,
         },
         {
-          baseURL: "http://localhost:3000",
+          httpsAgent: new https.Agent({
+            rejectUnauthorized: false,
+          }),
+          baseURL: "https://localhost:3000",
         }
       );
 
@@ -240,6 +250,37 @@ describe("Basic client with incremental configuration tests", () => {
       );
 
       const vr = await query(graph2);
+
+      expect(vr.length).toEqual(3);
+      expect(vr[0].value).toEqual("nested-folder");
+      expect(vr[1].value).toEqual("nested-file");
+      expect(vr[2].value).toEqual("nested-file-user-1");
+    });
+
+    it("should pull incrementally when relay holds additional version", async () => {
+      // only original version in the block store
+      const relayClientInitialBlocks = relayClientBasicFactory(
+        {
+          chunk,
+          chunkSize,
+          linkCodec,
+          valueCodec,
+          blockStore: initialBlocks,
+          incremental: true,
+        },
+        {
+          httpsAgent: new https.Agent({
+            rejectUnauthorized: false,
+          }),
+          baseURL: "https://localhost:3000",
+        }
+      );
+      const { versionStore, graph } = await relayClientInitialBlocks.pull(
+        versionStoreId,
+        originalStoreRoot
+      );
+
+      const vr = await query(graph);
 
       expect(vr.length).toEqual(3);
       expect(vr[0].value).toEqual("nested-folder");

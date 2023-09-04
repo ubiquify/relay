@@ -1,9 +1,12 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
+import https from "https";
 import {
   LinkResolver,
   GraphRelay,
   memoryBlockResolverFactory,
-} from "../graph-relay";
+  getCertificate,
+  createGraphRelay,
+} from "../index";
 import {
   Block,
   BlockStore,
@@ -62,22 +65,25 @@ describe("GraphRelay service", () => {
   beforeAll((done) => {
     relayBlockStore = memoryBlockStoreFactory();
     linkResolver = memoryBlockResolverFactory();
-    graphRelay = new GraphRelay(relayBlockStore, linkResolver);
-    server = graphRelay.start(3000, done); // Start the server
+    graphRelay = createGraphRelay(relayBlockStore, linkResolver);
+    server = graphRelay.startHttps(3000, getCertificate(), done);
     httpClient = axios.create({
-      baseURL: "http://localhost:3000",
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+      }),
+      baseURL: "https://localhost:3000",
     });
   });
 
   afterAll((done) => {
-    graphRelay.stop(done); // Stop the server
+    graphRelay.stopHttps(done);
   });
 
   describe("the protocol version", () => {
     it("should return the protocol version", async () => {
       const response = await checkProtocolVersion(httpClient);
       expect(response).toBeDefined();
-      expect(response).toEqual({ major: 0, minor: 0, patch: 23 });
+      expect(response).toEqual({ major: 0, minor: 1, patch: 0 });
     });
   });
 
