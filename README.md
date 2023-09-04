@@ -4,7 +4,7 @@ Simple graph relay for [O7](https://github.com/dstanesc/O-O-O-O-O-O-O) library.
 
 ## Usage
 
-Server api.
+Relay api. Only _http_ and _https_ protocols are supported at this stage.
 
 ```ts
 const blockStore: BlockStore = memoryBlockStoreFactory();
@@ -18,6 +18,12 @@ const httpPort = 3001;
 graphRelay.startHttp(httpPort, () => {
   console.log(`GraphRelay listening on http://localhost:${httpPort}`);
 });
+```
+
+Client api. Two categories: plumbing (fine granular) & basic (coarse granular) apis.
+
+```ts
+// See tests for examples.
 ```
 
 ## SSL
