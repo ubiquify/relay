@@ -54,7 +54,7 @@ enum KeyTypes {
   FILL = 3,
 }
 
-describe("Basic client with incremental configuration tests incrx", () => {
+describe("Basic client with incremental configuration tests", () => {
   let relayBlockStore: BlockStore;
   let blockStore: MemoryBlockStore;
   let linkResolver: LinkResolver;
@@ -62,9 +62,11 @@ describe("Basic client with incremental configuration tests incrx", () => {
   let graphRelay: GraphRelay;
   let relayClient: RelayClientBasic;
   let initialBlocks: MemoryBlockStore;
+  let initialBlocks2: MemoryBlockStore;
   beforeAll((done) => {
     blockStore = memoryBlockStoreFactory();
     initialBlocks = memoryBlockStoreFactory();
+    initialBlocks2 = memoryBlockStoreFactory();
     relayBlockStore = memoryBlockStoreFactory();
     linkResolver = memoryBlockResolverFactory();
     graphRelay = createGraphRelay(relayBlockStore, linkResolver);
@@ -166,6 +168,7 @@ describe("Basic client with incremental configuration tests incrx", () => {
       );
 
       blockStore.push(initialBlocks);
+      blockStore.push(initialBlocks2);
     });
 
     it("should pull graph and history", async () => {
@@ -267,6 +270,36 @@ describe("Basic client with incremental configuration tests incrx", () => {
           valueCodec,
           blockStore: initialBlocks,
           incremental: true,
+        },
+        {
+          httpsAgent: new https.Agent({
+            rejectUnauthorized: false,
+          }),
+          baseURL: "https://localhost:3000",
+        }
+      );
+      const { versionStore, graph } = await relayClientInitialBlocks.pull(
+        versionStoreId,
+        originalStoreRoot
+      );
+
+      const vr = await query(graph);
+
+      expect(vr.length).toEqual(3);
+      expect(vr[0].value).toEqual("nested-folder");
+      expect(vr[1].value).toEqual("nested-file");
+      expect(vr[2].value).toEqual("nested-file-user-1");
+    });
+
+    it("should pull non-incremental when relay holds additional version", async () => {
+      // only original version in the block store
+      const relayClientInitialBlocks = relayClientBasicFactory(
+        {
+          chunk,
+          chunkSize,
+          linkCodec,
+          valueCodec,
+          blockStore: initialBlocks2,
         },
         {
           httpsAgent: new https.Agent({
