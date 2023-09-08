@@ -1,4 +1,4 @@
-import { BlockStore } from "@dstanesc/o-o-o-o-o-o-o";
+import { BlockStore } from "@ubiquify/core";
 import { LinkResolver, RelayStore, relayStoreFactory } from "./relay-store";
 import { createRestApplication } from "./rest";
 import https from "https";

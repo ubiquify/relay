@@ -23,7 +23,7 @@ import {
   memoryBlockStoreFactory,
   valueCodecFactory,
   versionStoreFactory,
-} from "@dstanesc/o-o-o-o-o-o-o";
+} from "@ubiquify/core";
 import { compute_chunks } from "@dstanesc/wasm-chunking-fastcdc-node";
 
 const chunkSize = 512;

@@ -1,8 +1,8 @@
 {
-  "name": "@dstanesc/o-o-o-o-o-o-o-r",
-  "version": "0.1.1",
-  "description": "O-O-O-O-O-O-O relay",
-  "repository": "https://github.com/dstanesc/O-O-O-O-O-O-O-R.git",
+  "name": "@ubiquify/relay",
+  "version": "0.0.1",
+  "description": "Ubiquify relay",
+  "repository": "https://github.com/ubiquify/relay.git",
   "type": "module",
   "exports": "./dist/index.js",
   "module": "./dist/index.js",
@@ -16,17 +16,13 @@
     "start": "tsc && node --experimental-specifier-resolution=node --loader ts-node/esm src/main.ts"
   },
   "keywords": [
-    "graph",
-    "tree",
-    "share",
-    "relay",
-    "o-o-o-o-o-o-o",
-    "service"
+    "ubiquify",
+    "relay"
   ],
   "license": "(Apache-2.0 AND MIT)",
-  "author": "dstanesc <dstanesc@gmail.com>",
+  "author": "ubiquifier <ubiquify@proton.me>",
   "dependencies": {
-    "@dstanesc/o-o-o-o-o-o-o": "^0.1.1",
+    "@ubiquify/core": "^0.0.1",
     "@dstanesc/wasm-chunking-fastcdc-node": "^0.1.1",
     "express": "^4.18.2"
   },

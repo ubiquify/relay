@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { BlockStore, memoryBlockStoreFactory } from "@dstanesc/o-o-o-o-o-o-o";
+import { BlockStore, memoryBlockStoreFactory } from "@ubiquify/core";
 import {
   LinkResolver,
   memoryBlockResolverFactory,
@@ -14,7 +14,7 @@ const graphRelay = createGraphRelay(blockStore, linkResolver);
 graphRelay.startHttps(httpsPort, getCertificate(), () => {
   console.log(`GraphRelay listening on https://localhost:${httpsPort}`);
 });
-// const httpPort = 3001;
-// graphRelay.startHttp(httpPort, () => {
-//   console.log(`GraphRelay listening on http://localhost:${httpPort}`);
-// });
+const httpPort = 3001;
+graphRelay.startHttp(httpPort, () => {
+  console.log(`GraphRelay listening on http://localhost:${httpPort}`);
+});

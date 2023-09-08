@@ -2,7 +2,7 @@ import { LinkResolver, RelayStore } from "./relay-store";
 import { Request, Response } from "express";
 import express from "express";
 import bodyParser from "body-parser";
-import { chunkerFactory, Link } from "@dstanesc/o-o-o-o-o-o-o";
+import { chunkerFactory, Link } from "@ubiquify/core";
 import { compute_chunks } from "@dstanesc/wasm-chunking-fastcdc-node";
 
 export const createRestApplication = (

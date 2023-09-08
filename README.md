@@ -1,12 +1,20 @@
-# O-O-O-O-O-O-O-R
+# @ubiquify/relay
 
-Simple graph relay for [O7](https://github.com/dstanesc/O-O-O-O-O-O-O) library.
+Relay for [Ubiquify](https://github.com/ubiquify) applications. Forked from [O7-R](https://github.com/dstanesc/O-O-O-O-O-O-O-R).
 
 ## Usage
 
-Relay api. Only _http_ and _https_ protocols are supported at this stage.
+Used as a library.
 
 ```ts
+import { BlockStore, memoryBlockStoreFactory } from "@ubiquify/core";
+import {
+  LinkResolver,
+  memoryBlockResolverFactory,
+  getCertificate,
+  createGraphRelay,
+} from "@ubiquify/relay";
+
 const blockStore: BlockStore = memoryBlockStoreFactory();
 const linkResolver: LinkResolver = memoryBlockResolverFactory();
 const httpsPort = 3003;
@@ -19,11 +27,10 @@ graphRelay.startHttp(httpPort, () => {
   console.log(`GraphRelay listening on http://localhost:${httpPort}`);
 });
 ```
+Used standalone.
 
-Client api. Two categories: plumbing (fine granular) & basic (coarse granular) apis.
-
-```ts
-// See tests for examples.
+```sh
+npm start
 ```
 
 ## SSL
@@ -47,12 +54,6 @@ npm run clean
 npm install
 npm run build
 npm run test
-```
-
-## Usage
-
-```sh
-npm start
 ```
 
 ## Licenses

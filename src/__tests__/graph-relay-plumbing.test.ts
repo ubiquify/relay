@@ -16,7 +16,7 @@ import {
   versionStoreFactory,
   RelayClientPlumbing,
   relayClientPlumbingFactory,
-} from "@dstanesc/o-o-o-o-o-o-o";
+} from "@ubiquify/core";
 
 import { compute_chunks } from "@dstanesc/wasm-chunking-fastcdc-node";
 import https from "https";
