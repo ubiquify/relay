@@ -4,8 +4,7 @@ Relay for [Ubiquify](https://github.com/ubiquify) applications. Forked from [O7-
 
 ## Usage
 
-Used as a library.
-
+As library.
 ```ts
 import { BlockStore, memoryBlockStoreFactory } from "@ubiquify/core";
 import {
@@ -27,8 +26,8 @@ graphRelay.startHttp(httpPort, () => {
   console.log(`GraphRelay listening on http://localhost:${httpPort}`);
 });
 ```
-Used standalone.
 
+Standalone.
 ```sh
 npm start
 ```

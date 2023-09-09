@@ -6,3 +6,5 @@ logs
 .npmrc
 ssl/*.key
 ssl/*.crt
+src/__tests__/
+dist/__tests__/
