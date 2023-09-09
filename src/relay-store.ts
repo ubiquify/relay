@@ -143,9 +143,9 @@ export const relayStoreFactory = (
           root: mergedRoot,
           index: mergedIndex,
           blocks: mergedBlocks,
-        } = await versionStoreExisting.mergeVersions(versionStoreIncoming);
-        const versionRoot = versionStoreExisting.currentRoot();
-        const storeRoot = versionStoreExisting.versionStoreRoot();
+        } = await versionStoreIncoming.mergeVersions(versionStoreExisting);
+        const versionRoot = versionStoreIncoming.currentRoot();
+        const storeRoot = versionStoreIncoming.versionStoreRoot();
         await transientStore.push(blockStore);
         await resolver.update(versionStoreId, storeRoot);
         return { storeRoot, versionRoot };
