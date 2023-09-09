@@ -144,9 +144,9 @@ export const relayStoreFactory = (
           index: mergedIndex,
           blocks: mergedBlocks,
         } = await versionStoreExisting.mergeVersions(versionStoreIncoming);
-        await transientStore.push(blockStore);
         const versionRoot = versionStoreExisting.currentRoot();
         const storeRoot = versionStoreExisting.versionStoreRoot();
+        await transientStore.push(blockStore);
         await resolver.update(versionStoreId, storeRoot);
         return { storeRoot, versionRoot };
       } else {
