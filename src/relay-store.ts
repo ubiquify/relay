@@ -123,14 +123,17 @@ export const relayStoreFactory = (
           valueCodec,
           blockStore: transientStore,
         });
-        const graphStoreBundleExisting: Block = await packGraphVersion(
-          versionStoreExisting.currentRoot(),
-          blockStore
-        );
-        const { root: versionRootExisting } = await restoreGraphVersion(
-          graphStoreBundleExisting.bytes,
-          transientStore
-        );
+        const versions = versionStoreExisting.log();
+        for (const version of versions) {
+          const graphStoreBundleExisting: Block = await packGraphVersion(
+            version.root,
+            blockStore
+          );
+          const { root: versionRootExisting } = await restoreGraphVersion(
+            graphStoreBundleExisting.bytes,
+            transientStore
+          );
+        }
         const graphStoreBundleIncoming: Block = await packGraphVersion(
           versionStoreIncoming.currentRoot(),
           blockStore
