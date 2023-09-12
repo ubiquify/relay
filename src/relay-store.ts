@@ -10,11 +10,8 @@ import {
   memoryBlockStoreFactory,
   versionStoreFactory,
   VersionStore,
-  chunkerFactory,
   Link,
 } from "@ubiquify/core";
-
-import { compute_chunks } from "@dstanesc/wasm-chunking-fastcdc-node";
 
 const linkCodec: LinkCodec = linkCodecFactory();
 const valueCodec: ValueCodec = valueCodecFactory();
@@ -142,16 +139,36 @@ export const relayStoreFactory = (
           graphStoreBundleIncoming.bytes,
           transientStore
         );
-        const {
-          root: mergedRoot,
-          index: mergedIndex,
-          blocks: mergedBlocks,
-        } = await versionStoreIncoming.mergeVersions(versionStoreExisting);
-        const versionRoot = versionStoreIncoming.currentRoot();
-        const storeRoot = versionStoreIncoming.versionStoreRoot();
-        await transientStore.push(blockStore);
-        await resolver.update(versionStoreId, storeRoot);
-        return { storeRoot, versionRoot };
+
+        if (versionStoreExisting.includesVersion(versionRootIncoming)) {
+          //noop
+          const versionRoot = versionStoreExisting.currentRoot();
+          const storeRoot = versionStoreExisting.versionStoreRoot();
+          return { storeRoot, versionRoot };
+        } else if (
+          versionStoreIncoming.includesVersion(
+            versionStoreExisting.currentRoot()
+          )
+        ) {
+          // replace existing version store with incoming
+          await resolver.update(versionStoreId, versionStoreIncomingRoot);
+          const versionRoot = versionStoreIncoming.currentRoot();
+          const storeRoot = versionStoreIncoming.versionStoreRoot();
+          await transientStore.push(blockStore);
+          return { storeRoot, versionRoot };
+        } else {
+          // merge version stores
+          const {
+            root: mergedRoot,
+            index: mergedIndex,
+            blocks: mergedBlocks,
+          } = await versionStoreExisting.mergeVersions(versionStoreIncoming);
+          const versionRoot = versionStoreExisting.currentRoot();
+          const storeRoot = versionStoreExisting.versionStoreRoot();
+          await transientStore.push(blockStore);
+          await resolver.update(versionStoreId, storeRoot);
+          return { storeRoot, versionRoot };
+        }
       } else {
         // version already exists
         const versionRoot = versionStoreIncoming.currentRoot();
