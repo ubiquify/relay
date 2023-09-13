@@ -2,8 +2,15 @@ import { LinkResolver, RelayStore } from "./relay-store";
 import { Request, Response } from "express";
 import express from "express";
 import bodyParser from "body-parser";
-import { chunkerFactory, Link } from "@ubiquify/core";
+import {
+  chunkerFactory,
+  Link,
+  LinkCodec,
+  linkCodecFactory,
+} from "@ubiquify/core";
 import { compute_chunks } from "@dstanesc/wasm-chunking-fastcdc-node";
+
+const linkCodec: LinkCodec = linkCodecFactory();
 
 export const createRestApplication = (
   relayStore: RelayStore,
@@ -145,11 +152,11 @@ export const createRestApplication = (
   ): Promise<void> => {
     const id = req.query.id as string;
     try {
-      const result = await linkResolver.resolve(id);
+      const result: Link | undefined = await linkResolver.resolve(id);
       if (result === undefined) {
         res.sendStatus(404);
       } else {
-        res.status(200).json(result);
+        res.status(200).json(linkCodec.encodeString(result));
       }
     } catch (error) {
       console.error("Error handling RESOLVE request:", error);

@@ -1,6 +1,6 @@
 {
   "name": "@ubiquify/relay",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Ubiquify relay",
   "repository": "https://github.com/ubiquify/relay.git",
   "type": "module",
