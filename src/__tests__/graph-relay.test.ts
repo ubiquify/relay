@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
 import https from "https";
 import {
   LinkResolver,
@@ -84,6 +84,16 @@ describe("GraphRelay service", () => {
       const response = await checkProtocolVersion(httpClient);
       expect(response).toBeDefined();
       expect(response).toEqual({ major: 0, minor: 1, patch: 0 });
+    });
+  });
+
+  describe("the link resolver", () => {
+    it("should return undefined for unknown version store identity", async () => {
+      const response = await storeResolve(
+        httpClient,
+        "bafkreiflyrpgzvjjg3ve36ecgv24k5zfjc6hdz7yttko36ho7hy3yhgrue"
+      );
+      expect(response).toBeUndefined();
     });
   });
 
@@ -440,4 +450,27 @@ async function pushBlocks(httpClient: any, bytes: Uint8Array): Promise<any> {
 async function checkProtocolVersion(httpClient: any): Promise<any> {
   const response = await httpClient.get("/protocol/version", {});
   return response.data;
+}
+
+async function storeResolve(
+  httpClient: any,
+  versionStoreId: string
+): Promise<string | undefined> {
+  try {
+    const response = await httpClient.get("/store/resolve", {
+      params: {
+        id: versionStoreId,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError: AxiosError = error;
+      if (axiosError.response?.status !== 404) {
+        throw error;
+      } else {
+        return undefined;
+      }
+    }
+  }
 }

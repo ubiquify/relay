@@ -146,7 +146,11 @@ export const createRestApplication = (
     const id = req.query.id as string;
     try {
       const result = await linkResolver.resolve(id);
-      res.status(200).json(result);
+      if (result === undefined) {
+        res.sendStatus(404);
+      } else {
+        res.status(200).json(result);
+      }
     } catch (error) {
       console.error("Error handling RESOLVE request:", error);
       res.sendStatus(500);
@@ -174,18 +178,22 @@ export const createRestApplication = (
       res.setHeader("Access-Control-Allow-Headers", "Content-Type");
       next();
     });
-    
+
     app.use((req, res, next) => {
-      if (req.is('application/json')) {
+      if (req.is("application/json")) {
         bodyParser.json()(req, res, next);
       } else {
         next();
       }
     });
-    
+
     app.use((req, res, next) => {
-      if (req.is('application/octet-stream')) {
-        express.raw({ type: "application/octet-stream", limit: "1024mb" })(req, res, next);
+      if (req.is("application/octet-stream")) {
+        express.raw({ type: "application/octet-stream", limit: "1024mb" })(
+          req,
+          res,
+          next
+        );
       } else {
         next();
       }
